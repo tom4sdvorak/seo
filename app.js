@@ -19,8 +19,27 @@ function getNextID(){
     return count;
 }
 
+function setup(){
+    if(!fs.existsSync(path.join(__dirname, '/o'))) {
+        fs.mkdirSync(path.join(__dirname, '/o'), function(err){
+            if(err){
+                console.log("Cannot create directory");
+            }
+        });
+    }
+    if(!fs.existsSync(path.join(__dirname, '/download'))) {
+        fs.mkdirSync(path.join(__dirname, '/download'), function(err){
+            if(err){
+                console.log("Cannot create directory");
+            }
+        });
+    }
+
+    uploadCount = getNextID();
+}
+
 var app = express();
-var uploadCount = getNextID();
+setup();
 
 app.use(logger('dev'));
 app.use('/',express.static(path.join(__dirname, 'public')));
@@ -57,7 +76,35 @@ app.get('/o/:id/custom.css', function(req, res) {
     res.sendFile("custom.css", {root: path.join(__dirname, 'o/', id)});
 });
 
+app.get('/o/:id/download', function(req, res) {
 
+    var id = req.params.id;
+    if (fs.existsSync(path.join(__dirname, '/download', 'download' + id + '.zip'))) {
+        console.log("Download already created, sending...");
+        res.download(path.join(__dirname, '/download', 'download' + id + '.zip'));
+    }
+    else{
+        console.log("Setting up download");
+        var output = fs.createWriteStream(path.join(__dirname, '/download', 'download' + id + '.zip'));
+        var archive = archiver('zip', {
+            store: true
+        });
+
+        output.on('close', function() {
+            console.log(archive.pointer() + ' BYTES TOTAL');
+            console.log('DONE.');
+            res.download(path.join(__dirname, '/download', 'download' + id + '.zip'));
+        });
+
+        archive.on('error', function(err) {
+            throw err;
+        });
+
+        archive.pipe(output);
+        archive.directory(path.join(__dirname, 'o/', id), '');
+        archive.finalize();
+    }
+});
 
 /**
  * On upload, receive file and save it to new folder

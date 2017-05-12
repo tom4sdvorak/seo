@@ -115,7 +115,8 @@ function FileHandler() {
                 stream.write('<b>' + chapters[i] + '</b>');
             }
         }
-        stream.write('</ol></nav></div>');
+        stream.write('</ol>');
+        stream.write('<a href="download" id="dl-button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-download-alt"></span> Download</a></nav></div>');
         stream.write('<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>');
         stream.write('<script src="javascripts/output_global.js"></script>');
         stream.write('</body></html>');
@@ -130,6 +131,8 @@ function FileHandler() {
         stream.write('color: '+ this.parsedJSON.font_color + ';');
         stream.write('background-color: '+ this.parsedJSON.background_color + ';');
         stream.write('}');
+        stream.write('nav { display:none }');
+        stream.write('#sidemenu { display:none }');
         stream.end();
     }
 }

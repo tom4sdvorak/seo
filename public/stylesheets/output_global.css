@@ -62,6 +62,7 @@ h2 {
 }
 
 #sidemenu {
+    display: block !important;
     position: absolute;
     top: 0;
     left: 0;
@@ -73,6 +74,7 @@ h2 {
     cursor: pointer;
 }
 nav {
+    display: block !important;
     height: 100%;
     width: 0em;
     position: fixed;
@@ -95,6 +97,17 @@ nav ol {
 
 nav ol li{
     padding-top: 0.5em;
+}
+
+nav ol li{
+    padding-top: 0.5em;
+}
+
+#dl-button {
+    margin-left: 7em;
+    margin-top: 3em;
+    padding-left: 1em;
+    width: 10em;
 }
 
 nav ol li a:link, a:visited {
