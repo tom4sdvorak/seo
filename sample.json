@@ -1,0 +1,44 @@
+{
+  "paper_name": "Zkoumání bullshitu v nanotechnologiích",
+  "author": "Autor textu",
+  "background_color": "inherit",
+  "font_color": "inherit",
+  "chapters": [
+    {
+      "content": [
+        {
+          "text": "I'm a big fucking text",
+          "type": "text/large"
+        },
+        {
+          "height": "100px",
+          "image_name": "blabla.jpg",
+          "subtitle": "text pod obrazkem",
+          "type": "image",
+          "width": "100px"
+        },
+        {
+          "text": "walloftext walloftext walloftext walloftext walloftext walloftext walloftext",
+          "type": "text/normal"
+        }
+      ],
+      "name": "První kapitola o hovně"
+    },
+    {
+      "content": [
+        {
+          "text": "I'm also a big fucking text",
+          "type": "text/large"
+        },
+        {
+          "items": [
+            "text text text of first",
+            "text text text of second"
+          ],
+          "type": "list/bullet"
+        }
+      ],
+      "name": "Druhá kapitola o hovně"
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+html, body{
+    background-color: #9E9E9E;
+	margin: 0;
+    padding: 0;
+    min-width: 100%;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100%;
+    height: 100%;
+    max-height: 100%;
+	font-size: 11px;
+	color: #212121;
+}
+
+.container {
+    max-width: 60vw;
+    min-width: 700px;
+    margin: 0 auto;
+    overflow: hidden;
+    width: 100%;
+    background-color: #F5F5F5;
+    box-shadow: 0px 0px 5px rgba(0,0,0,0.6);
+}
+
+#content {
+	display: block;
+    min-height: 300px;
+	width: 90%;
+	margin: 0 auto;
+    padding: 1em;
+}
+
+figure {
+    display: block;
+    margin: 2em auto 2em auto;
+    padding: 1em;
+    text-align: center;
+}
+
+figure img {
+    box-shadow: 0px 0px 5px rgba(0,0,0,0.6);
+    margin: 0.5em;
+}
+
+footer {
+    display: block;
+    min-height: 5em;
+    width: 90%;
+    margin: 1em auto 0 auto;
+    padding: 1em;
+    border-top: 1px solid #BDBDBD;
+}
+
+header {
+    text-align: center;
+    margin-top: 3em;
+    padding-bottom: 3em;
+}
+
+h2 {
+    margin-top: 2em;
+}
+
+#sidemenu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
+    font-size: 3em;
+    color: #F5F5F5;
+    background-color: #212121;
+    padding: 0.2em;
+    cursor: pointer;
+}
+nav {
+    height: 100%;
+    width: 0em;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #212121;
+    overflow-x: hidden;
+    transition: width 1.5s;
+    padding-top: 4em;
+    color: #F5F5F5;
+}
+
+nav ol {
+    margin-left: 3em;
+    min-width: 14em;
+    font-size: 1.5em;
+    padding-left: 1em;
+}
+
+nav ol li{
+    padding-top: 0.5em;
+}
+
+nav ol li a:link, a:visited {
+    text-decoration: none;
+    color: #F5F5F5;
+}
+
+nav ol li a:hover, a:active {
+    text-decoration: none;
+    color: #BDBDBD;
+}
