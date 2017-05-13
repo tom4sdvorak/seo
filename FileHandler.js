@@ -1,47 +1,82 @@
 var fs = require("fs");
 var path = require('path');
+var exec = require('child_process').exec;
 
 function FileHandler() {
     this.id = 0;
     this.name = "default";
 
-    /*
-    Sets ID of file which is also name of folder where it is located
-     */
     this.setID = function(id){
         this.id = id;
         console.log("Setting id: " + id);
-    }
+    };
 
-    /*
-    Sets name of the file including extension
-     */
+    this.getID = function(){
+        return this.id;
+    };
 
     this.setName = function(name){
         this.name = name;
         console.log("Setting name: " + name);
-    }
+    };
+
+    this.getName = function(){
+        return this.name;
+    };
 
     /*
     Main function that creates necessary files
      */
-    this.genHTML = function(){
-        console.log("Generating HTML");
-        this.parsedJSON = JSON.parse(fs.readFileSync('./sample.json', 'utf8'));
-        var name = this.parsedJSON.paper_name;
+    this.genHTML = function(callback){
+        var id = this.id.toString();
+        this.genJSON(function(err){
+            if(err === 0){
+                callback(0);
+            }
+            else{
+                console.log("Generating HTML");
+                this.parsedJSON = JSON.parse(fs.readFileSync(path.join(__dirname, '/o', id, "parsed.json"), 'utf8'));
+                var name = this.parsedJSON.paper_name;
 
-        var stream = fs.createWriteStream(path.join(__dirname, '/o', this.id.toString(), name.replace(/ /g, '-') + ".html"));
-        this.writeHTML(stream);
-        stream.on('finish', function(){
-            console.log('Completed writing html');
-        });
+                var stream = fs.createWriteStream(path.join(__dirname, '/o', id, name.replace(/ /g, '-') + ".html"));
+                this.writeHTML(stream);
+                stream.on('finish', function(){
+                    console.log('Completed writing html');
+                });
 
-        stream = fs.createWriteStream(path.join(__dirname, '/o', this.id.toString(), "custom.css"));
-        this.writeCSS(stream);
-        stream.on('finish', function(){
-            console.log('Completed writing css');
-        });
-    }
+                stream = fs.createWriteStream(path.join(__dirname, '/o', id, "custom.css"));
+                this.writeCSS(stream);
+                stream.on('finish', function(){
+                    console.log('Completed writing css');
+                    callback(1);
+                });
+
+            }
+        }.bind(this));
+    };
+
+    this.genJSON = function(callback){
+        var fileExists = fs.existsSync(path.join(__dirname, '/o', this.id.toString(), this.getName()));
+        if(!fileExists) {
+            console.log('Cannot parse. File does not exist at location' + fileExists);
+            callback(0);
+        }
+        else{
+            console.log('Parsing pdf');
+            var id = this.id.toString();
+            exec('ruby ./dummy.rb', function(error, stdout, stderr){
+                console.log('error: ' + error);
+                console.log('stderr: ' + stderr);
+                var stream = fs.createWriteStream(path.join(__dirname, '/o', id , 'parsed.json'));
+                stream.write(stdout);
+                stream.end();
+                stream.on('finish', function(){
+                    console.log('Completed parsing json');
+                    callback(1);
+                });
+            });
+        }
+    };
 
     /*
     Writes to stream all HTML tags based on reading of json file
@@ -121,7 +156,7 @@ function FileHandler() {
         stream.write('<script src="javascripts/output_global.js"></script>');
         stream.write('</body></html>');
         stream.end();
-    }
+    };
 
     /*
      Writes to stream all css properties based on reading of json file
@@ -134,7 +169,7 @@ function FileHandler() {
         stream.write('nav { display:none }');
         stream.write('#sidemenu { display:none }');
         stream.end();
-    }
+    };
 }
 
 module.exports = FileHandler;

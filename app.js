@@ -121,12 +121,22 @@ app.post('/upload', function(req, res){
                 console.log("Cannot create directory");
             }
             else{
-                fs.rename(file.path, path.join(form.uploadDir, file.name));
-                newFile.setID(uploadCount);
-                newFile.setName(file.name);
-                newFile.genHTML();
-                res.json({success : "File Uploaded", id : newFile.id});
-                uploadCount++;
+                fs.rename(file.path, path.join(form.uploadDir, file.name), function(){
+                    newFile.setID(uploadCount);
+                    newFile.setName(file.name);
+                    newFile.genHTML(function(err){
+                        if(err === 0){
+                            console.log("Cannot create HTML");
+                        }
+                        else{
+                            console.log("FINISHED");
+                            res.json({success : "File Uploaded", id : newFile.id});
+                            uploadCount++;
+                        }
+                    });
+
+
+                });
             }
         });
     });

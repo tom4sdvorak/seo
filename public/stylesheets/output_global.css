@@ -76,21 +76,23 @@ h2 {
 nav {
     display: block !important;
     height: 100%;
-    width: 0em;
+    width: 25em;
+    margin-left: -25em;
     position: fixed;
     z-index: 1;
     top: 0;
     left: 0;
     background-color: #212121;
     overflow-x: hidden;
-    transition: width 1.5s;
+    transition: margin-left 1.5s;
     padding-top: 4em;
     color: #F5F5F5;
 }
 
 nav ol {
     margin-left: 3em;
-    min-width: 14em;
+    margin-right: 1em;
+    min-width: 10em;
     font-size: 1.5em;
     padding-left: 1em;
 }

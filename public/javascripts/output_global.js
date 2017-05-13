@@ -3,11 +3,11 @@ $(document).ready(function() {
     $("#sidemenu").click(function() {
         if(toggled){
             toggled = false;
-            $("nav").css("width", "0em");
+            $("nav").css("margin-left", "-25em");
         }
         else{
             toggled = true;
-            $("nav").css("width", "25em");
+            $("nav").css("margin-left", "0em");
         }
     });
 });
