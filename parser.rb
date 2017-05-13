@@ -1,9 +1,10 @@
  require 'pdf-reader'
  require 'json'
 
+
+# CODE TAKEN
 class CustomPageLayout < PDF::Reader::PageLayout
   attr_reader :runs
- 
   # we need to filter duplicate characters which seem to be caused by shadowing
   def group_chars_into_runs(chars)
     # filter out duplicate chars before going on with regular logic,
@@ -44,64 +45,48 @@ class PageTextReceiverKeepSpaces < PDF::Reader::PageTextReceiver
     end
   end
 end
+
+#END OF CODE TAKEN
+
  
+
+ #CODE TAKEN AND CUSTOMIZED
 class PDFTextProcessor
   MAX_KERNING_DISTANCE = 10 # experimental value
  
   # pages may specify which pages to actually parse (zero based)
   #   [0, 3] will process only the first and fourth page if present
   def self.process(pdf_io, pages = nil)
+
+    #goes to the beginning, creates a new reader, fails if file empty
     pdf_io.rewind
-    reader = PDF::Reader.new(pdf_io)
+    reader = PDF::Reader.new(pdf_io) 
     fail 'Could not find any pages in the given document' if reader.pages.empty?
-    processed_pages = []
+
     text_receiver = PageTextReceiverKeepSpaces.new
     requested_pages = pages ? reader.pages.values_at(*pages) : reader.pages
+    allruns = []
     requested_pages.each do |page|
       unless page.nil?
         page.walk(text_receiver)
         runs = CustomPageLayout.new(text_receiver.characters, text_receiver.mediabox).runs
- 
         # sort text runs from top left to bottom right
         # read as: if both runs are on the same line first take the leftmost, else the uppermost - (0,0) is bottom left
         runs.sort! {|r1, r2| r2.y == r1.y ? r1.x <=> r2.x : r2.y <=> r1.y}
- 
-        # group runs by lines and merge those that are close to each other
-        lines_hash = {}
-        
-
-        runs.each do |run|
-          lines_hash[run.y] ||= []
-          # runs that are very close to each other are considered to belong to the same text "block"
-          if lines_hash[run.y].empty? || (lines_hash[run.y].last.last.endx + MAX_KERNING_DISTANCE < run.x)
-            lines_hash[run.y] << [run]
-          else
-            lines_hash[run.y].last << run
-          end
-        end
-
-        lines = []
-        lines_hash.each do |y, run_groups|
-          lines << {y: y, text_groups: []}
-          run_groups.each do |run_group|
-            group_text = run_group.map { |run| run.text }.join('').strip
-            lines.last[:text_groups] << ({
-              x: run_group.first.x,
-              width: run_group.last.endx - run_group.first.x,
-              text: heal_stringCZ(group_text),
-              #text: group_text,
-              size: run_group.first.font_size
-            }) unless group_text.empty?
-          end
-        end
-        # consistent indexing with pages param and reader.pages selection
-        processed_pages << {page: page.number, lines: lines}
+        allruns += runs
+      
       end
     end
-    processed_pages
+    allruns
   end
+
+
 end
 
+
+def equals_roughly(source, target)
+  source > 0.97 * target && source < 1.03 * target
+end
 
 
 def heal_stringCZ (string)
@@ -114,55 +99,90 @@ def heal_stringCZ (string)
 	string
 end
 
+def get_run_type(run)
+  run_type = case run.font_size
+    when 35
+      :chapter_number
+    when 24
+      :chapter_name
+    when 17
+      :thesis_name
+    when 14
+      :subchapter_lvl1
+    when 11
+      :subchapter_lvl2
+    when 10
+      :text
+    when 8
+      :footer_note
+    when 7
+      :index
+    when 5
+      :footer_index
+    else
+      :unknown
+    end
+end
 
+def get_thesis_name(enum)
+  thesis_name = String.new
 
+  while get_run_type(enum.peek) != :thesis_name do
+    puts "waiting for thesis name"
+    enum.next
+  end
 
+  thesis_name << enum.next.text
 
-def printdoc(pages)
-	pages.each do |page|
-		#puts "<page>"
-		page[:lines].each do |line|
-			line[:text_groups].each do |group|
-				if group[:size] != 10 then
-					
-					tag = case group[:size]
-					when 14
-						"h2"
-					when 24
-						"h1"
-					else
-						"FUCKING SOLVE THIS SHIT: #{group[:size]}"
-					end
+  while get_run_type(enum.peek) == :thesis_name do
+    thesis_name << " " << enum.next.text
+  end
+return thesis_name
+end
 
-
-					print "<" << tag << ">"
-					print group[:text]
-					print "</" << tag << ">\n"
-				else
-					print group[:text]
-				end
-
-				print " " unless line[:text_groups].last == group
-			end
-			puts "<br>"
-		end
-	end
+def get_author_name(enum)
+  author_name = String.new
+  while get_run_type(enum.peek) == :subchapter_lvl1 do
+    author_name << enum.next.text
+  end
+  return author_name
 end
 
 
+def process_runs(runs)
+  enum = runs.to_enum
+  thesis_name = get_thesis_name(enum)
+  author_name = get_author_name(enum)
+  puts "Thesis name: " << thesis_name
+  puts "Author name: " << author_name
+end
 
+def parse_chapter(enum)
+  chapter_name = String.new
+
+  while get_run_type(enum.peek) == :chapter_name do
+    chapter_name << enum.next.text
+  end
+
+  while true do #------------- MAIN LOADING LOOP
+    run = enum.next
+
+    puts run
+
+
+  end
+
+
+end
 
 
 if File.exists?('input/cvachond_2014bach.pdf')#ARGV[0])
   file = File.open('input/cvachond_2014bach.pdf')#ARGV[0])
-  pages = PDFTextProcessor.process(file)
+  runs = PDFTextProcessor.process(file)
+  process_runs(runs)
 
-  puts "<html>\n<head>\n<meta charset=\"UTF-8\">\n</head>\n<body>"
-
-  printdoc pages
-
-  puts "</body>\n</html>"
 else
   puts "Cannot open file '#{ARGV[0]}' (or no file given)"
   return 1
 end
+
