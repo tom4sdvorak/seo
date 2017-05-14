@@ -114,8 +114,7 @@ class RunProcessor
 
     hack_skip_to_beginning        # REPLACE WITH LOAD META
 
-    #while true do 
-    1.times do
+    while true do 
       chapt = parse_chapter
       if !chapt then break end
       @root[:chapters] << chapt
