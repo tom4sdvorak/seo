@@ -176,7 +176,7 @@ class RunProcessor
 
     chapter_name = String.new
     while get_run_type(@current) == :chapter_name do          # get chapter name
-      chapter_name << heal_stringCZ( @current.text )
+      chapter_name << " " << heal_stringCZ( @current.text )
       advance
     end
     
@@ -185,7 +185,6 @@ class RunProcessor
 
   def hack_skip_to_beginning
     seek :chapter_number
-    #puts "Skipped to: #{@current.text}"
   end
 
   def is_joinable
@@ -194,7 +193,7 @@ class RunProcessor
     end
 
     #evaluates true if the same font && (on same/successive lines || on different pages)
-    @current.font_size == @previous.font_size && ( (@current.y - @previous.y).abs < 13.65 ||  @previous.y - @current.y < -500 )
+    @current.font_size == @previous.font_size #&& ( (@current.y - @previous.y).abs < 13.65 ||  @previous.y - @current.y < -500 )
   end
 
   def parse_chapter
@@ -221,6 +220,11 @@ class RunProcessor
 
 
         if is_joinable
+          if !current_object
+            advance
+            next
+          end
+
           current_text = current_object[:text]
           if current_text[-1] == "-"
             current_text.chomp!("-")
@@ -266,14 +270,15 @@ class RunProcessor
           current_object[:type] = "text/plus"
           current_object[:text] = heal_stringCZ @current.text
         else
-          current_object[:type] = "text/small"
-          current_object[:text] = "UNKNOWN CONTENT" #heal_stringCZ @current.text
+          current_object = nil
+          #current_object[:type] = "text/small"
+          #current_object[:text] = "UNKNOWN CONTENT" #heal_stringCZ @current.text
         end
 
         advance
       end
     rescue StopIteration
-      content << current_object
+      content << current_object 
     end
     return {name: chapter_name, content: content}
   end
