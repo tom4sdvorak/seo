@@ -37,20 +37,30 @@ function FileHandler() {
                 console.log("Generating HTML");
                 this.parsedJSON = JSON.parse(fs.readFileSync(path.join(__dirname, '/o', id, "parsed.json"), 'utf8'));
                 var name = this.parsedJSON.paper_name;
-
-                var stream = fs.createWriteStream(path.join(__dirname, '/o', id, name.replace(/ /g, '-') + ".html"));
-                this.writeHTML(stream);
-                stream.on('finish', function(){
+                var done = false;
+                var streamHTML = fs.createWriteStream(path.join(__dirname, '/o', id, name.replace(/ /g, '-') + ".html"));
+                this.writeHTML(streamHTML);
+                streamHTML.on('finish', function(){
                     console.log('Completed writing html');
+                    if(done){
+                        callback(1);
+                    }
+                    else{
+                        done = true;
+                    }
                 });
 
-                stream = fs.createWriteStream(path.join(__dirname, '/o', id, "custom.css"));
-                this.writeCSS(stream);
-                stream.on('finish', function(){
+                var streamCSS = fs.createWriteStream(path.join(__dirname, '/o', id, "custom.css"));
+                this.writeCSS(streamCSS);
+                streamCSS.on('finish', function(){
                     console.log('Completed writing css');
-                    callback(1);
+                    if(done){
+                        callback(1);
+                    }
+                    else{
+                        done = true;
+                    }
                 });
-
             }
         }.bind(this));
     };
