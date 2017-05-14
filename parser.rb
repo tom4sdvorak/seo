@@ -235,11 +235,16 @@ class RunProcessor
           next
         end
 
-      
-
         if get_run_type(@current) == :chapter_name
-          #puts "---- END OF CHAPTER ----"
           content << current_object
+
+          if content[-1] && content[-1][:type] == "text/small" && content[-2] && content[-2][:type] == "text/large"
+            #puts "deleting " << content.last[:text]
+            content.pop
+            #puts "deleting " << content.last[:text]
+            content.pop
+          end
+
           break
         end
 
