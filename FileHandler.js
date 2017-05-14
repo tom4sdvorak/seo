@@ -74,7 +74,7 @@ function FileHandler() {
         else{
             console.log('Parsing pdf');
             var id = this.id.toString();
-            exec('ruby ./parser.rb ' + path.join(__dirname, '/o', this.id.toString(), this.getName()), function(error, stdout, stderr){
+            exec('ruby ./parser.rb ' + path.join(__dirname, '/o', this.id.toString(), this.getName()),{maxBuffer: 1000*1024} ,function(error, stdout, stderr){
                 if(error !== null){
                     console.log('error: ' + error);
                     console.log('stderr: ' + stderr);
@@ -128,7 +128,7 @@ function FileHandler() {
                         stream.write('<h4>' + this.parsedJSON.chapters[chapter].content[content].text + '</h4>');
                         break;
                     case "text/normal":
-                        stream.write('<p class="text-normal">' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
+                        stream.write('<p>' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
                         break;
                     case "text/small":
                         stream.write('<p class="text-small">' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
