@@ -122,7 +122,9 @@ app.post('/upload', function(req, res){
             }
             else{
                 fs.rename(file.path, path.join(form.uploadDir, file.name), function(err){
-                    console.log("Error on fs.rename: " + err)
+                    if(err){
+                        console.log("Error on fs.rename: " + err);
+                    }
                     newFile.setID(uploadCount);
                     newFile.setName(file.name);
                     newFile.genHTML(function(err){
