@@ -58,7 +58,6 @@ class PDFTextProcessor
   end
 end
 
-
 def heal_stringCZ (string)
     string.gsub!('Æ', 'á')
     string.gsub!('Ø', 'é')
@@ -70,8 +69,6 @@ def heal_stringCZ (string)
     string.gsub!('‹', 'ň')
     string
 end
-
-
 
 def equals_roughly(source, target)
   source > 0.98 * target && source < 1.02 * target
@@ -270,7 +267,7 @@ class RunProcessor
           current_object[:text] = heal_stringCZ @current.text
         else
           current_object[:type] = "text/small"
-          current_object[:text] = heal_stringCZ @current.text
+          current_object[:text] = "UNKNOWN CONTENT" #heal_stringCZ @current.text
         end
 
         advance
