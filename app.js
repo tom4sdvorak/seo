@@ -85,24 +85,41 @@ app.get('/o/:id/download', function(req, res) {
     }
     else{
         console.log("Setting up download");
-        var output = fs.createWriteStream(path.join(__dirname, '/download', 'download' + id + '.zip'));
-        var archive = archiver('zip', {
-            store: true
-        });
 
-        output.on('close', function() {
-            console.log(archive.pointer() + ' BYTES TOTAL');
-            console.log('DONE.');
-            res.download(path.join(__dirname, '/download', 'download' + id + '.zip'));
-        });
+        var files = fs.readdirSync(path.join(__dirname, '/o', id));
+        var regex = /.html\b/i;
+        var filename = "none";
+        for(var i = 0; i < files.length; i++){
+            if(files[i].search(regex) !== -1){
+                filename = files[i];
+                break;
+            }
+        }
+        if(filename === 'none'){
+            res.redirect('/');
+        }
+        else{
+            var output = fs.createWriteStream(path.join(__dirname, '/download', 'download' + id + '.zip'));
+            var archive = archiver('zip', {
+                store: true
+            });
 
-        archive.on('error', function(err) {
-            throw err;
-        });
+            output.on('close', function() {
+                console.log(archive.pointer() + ' BYTES TOTAL');
+                console.log('DONE.');
+                res.download(path.join(__dirname, '/download', 'download' + id + '.zip'));
+            });
 
-        archive.pipe(output);
-        archive.directory(path.join(__dirname, 'o/', id), '');
-        archive.finalize();
+            archive.on('error', function(err) {
+                throw err;
+            });
+
+            archive.pipe(output);
+            //archive.directory(path.join(__dirname, 'o/', id), '');
+            archive.file(path.join(__dirname, 'o/', id, filename), { name: filename });
+            archive.file(path.join(__dirname, 'o/', id, "custom.css"), { name: "custom.css" });
+            archive.finalize();
+        }
     }
 });
 
