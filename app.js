@@ -131,6 +131,7 @@ app.post('/upload', function(req, res){
                         if(err === 0){
                             console.log("Cannot create HTML");
                             res.redirect('/');
+                            uploadCount++;
                         }
                         else{
                             console.log("FINISHED");
