@@ -60,12 +60,14 @@ end
 
 
 def heal_stringCZ (string)
-    string.gsub!('Æ', 'á');
-    string.gsub!('Ø', 'é');
-    string.gsub!('•', 'ů');
-    string.gsub!('”', 'ž');
-    string.gsub!('†', 'š');
-    string.gsub!('œ', 'ú');
+    string.gsub!('Æ', 'á')
+    string.gsub!('Ø', 'é')
+    string.gsub!('•', 'ů')
+    string.gsub!('”', 'ž')
+    string.gsub!('†', 'š')
+    string.gsub!('œ', 'ú')
+    string.gsub!('·', 'ť')
+    string.gsub!('‹', 'ň')
     string
 end
 
