@@ -83,7 +83,11 @@ function FileHandler() {
      */
     this.writeHTML = function(stream){
         var chapters = new Array();
-        stream.write('<!doctype html><html lang="cs"><head><meta charset="utf-8">');
+        stream.write('<!doctype html><html lang="cs"><head>');
+        stream.write('<meta charset="utf-8">');
+        stream.write('<meta name="keywords" content="' + this.parsedJSON.keywords + '">');
+        stream.write('<meta name="author" content="' + this.parsedJSON.author + '">');
+        stream.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
         stream.write('<title>' + this.parsedJSON.paper_name + '</title>');
         stream.write('<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">');
         stream.write('<link href="stylesheets/output_global.css" rel="stylesheet">');
@@ -104,6 +108,9 @@ function FileHandler() {
                 switch(this.parsedJSON.chapters[chapter].content[content].type) {
                     case "text/large":
                         stream.write('<h3>' + this.parsedJSON.chapters[chapter].content[content].text + '</h3>');
+                        break;
+                    case "text/plus":
+                        stream.write('<h4>' + this.parsedJSON.chapters[chapter].content[content].text + '</h4>');
                         break;
                     case "text/normal":
                         stream.write('<p class="text-normal">' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
@@ -162,10 +169,6 @@ function FileHandler() {
      Writes to stream all css properties based on reading of json file
      */
     this.writeCSS = function(stream){
-        stream.write('body { ');
-        stream.write('color: '+ this.parsedJSON.font_color + ';');
-        stream.write('background-color: '+ this.parsedJSON.background_color + ';');
-        stream.write('}');
         stream.write('nav { display:none }');
         stream.write('#sidemenu { display:none }');
         stream.end();

@@ -61,6 +61,11 @@ h2 {
     margin-top: 2em;
 }
 
+h4 {
+    font-size: 11px;
+    font-weight: bold;
+}
+
 #sidemenu {
     display: block !important;
     position: absolute;
