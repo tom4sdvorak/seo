@@ -75,15 +75,20 @@ function FileHandler() {
             console.log('Parsing pdf');
             var id = this.id.toString();
             exec('ruby ./parser.rb ' + path.join(__dirname, '/o', this.id.toString(), this.getName()), function(error, stdout, stderr){
-                console.log('error: ' + error);
-                console.log('stderr: ' + stderr);
-                var stream = fs.createWriteStream(path.join(__dirname, '/o', id , 'parsed.json'));
-                stream.write(stdout);
-                stream.end();
-                stream.on('finish', function(){
-                    console.log('Completed parsing json');
-                    callback(1);
-                });
+                if(error !== null){
+                    console.log('error: ' + error);
+                    console.log('stderr: ' + stderr);
+                    callback(0);
+                }
+                else{
+                    var stream = fs.createWriteStream(path.join(__dirname, '/o', id , 'parsed.json'));
+                    stream.write(stdout);
+                    stream.end();
+                    stream.on('finish', function(){
+                        console.log('Completed parsing json');
+                        callback(1);
+                    });
+                }
             });
         }
     };

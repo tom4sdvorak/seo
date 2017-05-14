@@ -130,6 +130,7 @@ app.post('/upload', function(req, res){
                     newFile.genHTML(function(err){
                         if(err === 0){
                             console.log("Cannot create HTML");
+                            res.redirect('/');
                         }
                         else{
                             console.log("FINISHED");
