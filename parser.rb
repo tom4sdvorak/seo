@@ -2,7 +2,7 @@ require 'pdf-reader'
 require 'json'
 
 # CODE TAKEN
-class CustomPageLayout < PDF::Reader::PageLayout
+class CustomLayout < PDF::Reader::PageLayout
   attr_reader :runs
   def group_chars_into_runs(chars)
     chars.uniq! {|val| {x: val.x, y: val.y, text: val.text}}
@@ -10,7 +10,7 @@ class CustomPageLayout < PDF::Reader::PageLayout
   end
 end
 
-class PageTextReceiverKeepSpaces < PDF::Reader::PageTextReceiver
+class CustomReceiver < PDF::Reader::PageTextReceiver
   attr_reader :characters, :mediabox
   private
   def internal_show_text(string)
@@ -42,15 +42,14 @@ class PDFTextProcessor
     reader = PDF::Reader.new(pdf_io) 
     if reader.pages.empty? then fail 'Could not find any pages in the given document' end
 
-    text_receiver = PageTextReceiverKeepSpaces.new
+
+    text_receiver = CustomReceiver.new
     
     allruns = []
     reader.pages.each do |page|
       unless page.nil?
         page.walk(text_receiver)
-        runs = CustomPageLayout.new(text_receiver.characters, text_receiver.mediabox).runs
-        # sort text runs from top left to bottom right
-        # read as: if both runs are on the same line first take the leftmost, else the uppermost - (0,0) is bottom left
+        runs = CustomLayout.new(text_receiver.characters, text_receiver.mediabox).runs
         runs.sort! {|r1, r2| r2.y == r1.y ? r1.x <=> r2.x : r2.y <=> r1.y}
         allruns += runs 
       end
@@ -95,6 +94,10 @@ class RunProcessor
     @current = @enum.next
   end 
 
+  def skip
+    @current = @enum.next
+  end
+
   def seek(type)
     while get_run_type(@current) != type do
       advance
@@ -111,7 +114,8 @@ class RunProcessor
 
     hack_skip_to_beginning        # REPLACE WITH LOAD META
 
-    while true do 
+    #while true do 
+    1.times do
       chapt = parse_chapter
       if !chapt then break end
       @root[:chapters] << chapt
@@ -150,11 +154,11 @@ class RunProcessor
 
     seek :thesis_name
 
-    thesis_name << @current.text
+    thesis_name << heal_stringCZ( @current.text )
     advance
 
     while get_run_type(@current) == :thesis_name do
-      thesis_name << " " << @current.text
+      thesis_name << " " << heal_stringCZ( @current.text )
       advance
     end
     return thesis_name
@@ -163,7 +167,7 @@ class RunProcessor
   def get_author_name
     author_name = String.new
     while get_run_type(@current) == :subchapter_lvl1 do
-      author_name << @current.text
+      author_name << heal_stringCZ( @current.text )
       advance
     end
     return author_name
@@ -174,7 +178,7 @@ class RunProcessor
 
     chapter_name = String.new
     while get_run_type(@current) == :chapter_name do          # get chapter name
-      chapter_name << @current.text
+      chapter_name << heal_stringCZ( @current.text )
       advance
     end
     
@@ -187,8 +191,12 @@ class RunProcessor
   end
 
   def is_joinable
-    if !@previous then return false end
-    @current.font_size == @previous.font_size && (@current.y - @previous.y).abs < 13.65
+    if !@previous
+      return false
+    end
+
+    #evaluates true if the same font && (on same/successive lines || on different pages)
+    @current.font_size == @previous.font_size && ( (@current.y - @previous.y).abs < 13.65 ||  @previous.y - @current.y < -500 )
   end
 
   def parse_chapter
@@ -208,13 +216,21 @@ class RunProcessor
 
         if equals_roughly(@current.y, 94.69) || equals_roughly(@current.y, 739.48)
           #puts "header/footer, ignored: #{@current.text}"
-          advance
+          #advance
+          skip
           next
         end
 
 
         if is_joinable
-          #puts "joined: #{@current.text}"
+          current_text = current_object[:text]
+          if current_text[-1] == "-"
+            current_text.chomp!("-")
+            current_object[:text] << heal_stringCZ( @current.text )
+            advance
+            next
+          end
+
           current_object[:text] << " " << heal_stringCZ( @current.text )
           advance
           next
@@ -251,8 +267,6 @@ class RunProcessor
           current_object[:text] = heal_stringCZ @current.text
         end
 
-        #puts "created object of type #{current_object[:type]}"
-        #puts "#{current_object[:text]}"
         advance
       end
     rescue StopIteration
