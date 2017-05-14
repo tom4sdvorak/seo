@@ -126,8 +126,11 @@ class RunProcessor
 
     hack_skip_to_beginning        # REPLACE WITH LOAD META
 
-    hash = parse_chapter
-    @root[:chapters] = [hash]
+    while true do 
+      chapt = parse_chapter
+      if !chapt then break end
+      @root[:chapters] << chapt
+    end
 
     return @root.to_json
   end
@@ -189,6 +192,8 @@ class RunProcessor
       chapter_name << @current.text
       advance
     end
+    
+    return chapter_name
   end
 
   def hack_skip_to_beginning
@@ -204,11 +209,12 @@ class RunProcessor
   def parse_chapter
     begin
     chapter_name = get_chapter_name
+    
     rescue StopIteration
       return nil
     end
 
-    #puts "Chapter name: #{chapter_name}"
+    
     content = []
     current_object = nil
 
@@ -253,10 +259,10 @@ class RunProcessor
           current_object[:type] = "text/large"
           current_object[:text] = @current.text
         elsif get_run_type(@current) == :subchapter_lvl2
-          current_object[:type] == "text/plus"
+          current_object[:type] = "text/plus"
           current_object[:text] = @current.text
         else
-          current_object[:type] == "unknown"
+          current_object[:type] = "text/small"
           current_object[:text] = @current.text
         end
 
@@ -266,9 +272,7 @@ class RunProcessor
       end
     rescue StopIteration
       content << current_object
-      puts "rescued iteration at large loop"
     end
-
 
     return {name: chapter_name, content: content}
   end
