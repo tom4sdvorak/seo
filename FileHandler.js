@@ -98,6 +98,9 @@ function FileHandler() {
      */
     this.writeHTML = function(stream){
         var chapters = new Array();
+        var doingList = "none";
+        var bulletRegex = /^•/gi;
+        var numberRegex = /^\d+\./gi;
         stream.write('<!doctype html><html lang="cs"><head>');
         stream.write('<meta charset="utf-8">');
         stream.write('<meta name="keywords" content="' + this.parsedJSON.keywords + '">');
@@ -128,7 +131,37 @@ function FileHandler() {
                         stream.write('<h4>' + this.parsedJSON.chapters[chapter].content[content].text + '</h4>');
                         break;
                     case "text/normal":
-                        stream.write('<p>' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
+                        //Check if item from list
+                        console.log("Searching for bullet: " + this.parsedJSON.chapters[chapter].content[content].text.match(bulletRegex));
+                        if(this.parsedJSON.chapters[chapter].content[content].text.match(bulletRegex) !== null){
+                            if(doingList !== "bullet"){
+                                stream.write('<ul>');
+                                doingList = "bullet";
+                            }
+                            stream.write('<li>' + this.parsedJSON.chapters[chapter].content[content].text.substr(1) + '</li>');
+                        }
+                        else if(this.parsedJSON.chapters[chapter].content[content].text.match(numberRegex) !== null){
+                            if(doingList !== "number"){
+                                stream.write('<ol>');
+                                doingList = "number";
+                            }
+                            stream.write('<li>' + this.parsedJSON.chapters[chapter].content[content].text.substr(2) + '</li>');
+                        }
+                        else{
+                            switch(doingList){
+                                case "bullet":
+                                    stream.write('</ul>');
+                                    doingList = "none";
+                                    break;
+                                case "number":
+                                    stream.write('</ol>');
+                                    doingList = "none";
+                                    break;
+                                default:
+                                    break;
+                            }
+                            stream.write('<p>' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
+                        }
                         break;
                     case "text/small":
                         stream.write('<p class="text-small">' + this.parsedJSON.chapters[chapter].content[content].text + '</p>');
