@@ -241,9 +241,9 @@ class RunProcessor
         if get_run_type(@current) == :chapter_name
           content << current_object unless !current_object
 
-          if content[-1] && content[-1][:type] == "text/small" && content[-2] && content[-2][:type] == "text/large"
+          if content[-1] && content[-1][:type] == "text/large" #&& content[-2] && content[-2][:type] == "text/large"
             content.pop
-            content.pop
+            #content.pop
           end
 
           break
