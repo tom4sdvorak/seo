@@ -103,7 +103,6 @@ function FileHandler() {
         var numberRegex = /^\d+\./gi;
         stream.write('<!doctype html><html lang="cs"><head>');
         stream.write('<meta charset="utf-8">');
-        stream.write('<meta name="keywords" content="' + this.parsedJSON.keywords + '">');
         stream.write('<meta name="author" content="' + this.parsedJSON.author + '">');
         stream.write('<meta name="viewport" content="width=device-width, initial-scale=1.0">');
         stream.write('<title>' + this.parsedJSON.paper_name + '</title>');
