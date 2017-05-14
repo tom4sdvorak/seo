@@ -215,7 +215,7 @@ class RunProcessor
 
         if is_joinable
           #puts "joined: #{@current.text}"
-          current_object[:text] << " " << @current.text
+          current_object[:text] << " " << heal_stringCZ( @current.text )
           advance
           next
         end
@@ -239,16 +239,16 @@ class RunProcessor
 
         if get_run_type(@current) == :text
           current_object[:type] = "text/normal"
-          current_object[:text] = @current.text
+          current_object[:text] = heal_stringCZ @current.text
         elsif get_run_type(@current) == :subchapter_lvl1
           current_object[:type] = "text/large"
-          current_object[:text] = @current.text
+          current_object[:text] = heal_stringCZ @current.text
         elsif get_run_type(@current) == :subchapter_lvl2
           current_object[:type] = "text/plus"
-          current_object[:text] = @current.text
+          current_object[:text] = heal_stringCZ @current.text
         else
           current_object[:type] = "text/small"
-          current_object[:text] = @current.text
+          current_object[:text] = heal_stringCZ @current.text
         end
 
         #puts "created object of type #{current_object[:type]}"
@@ -268,7 +268,7 @@ end
 
 #------- MAIN CODE
 if File.exists?("#{ARGV[0]}")
-  file = File.open("#{ARGV[0]}")
+  file = File.open("#{ARGV[0]}", "rb")
   runs = PDFTextProcessor.process(file)
   processor = RunProcessor.new(runs)
   puts processor.get_json
