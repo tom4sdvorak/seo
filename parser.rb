@@ -1,28 +1,17 @@
 require 'pdf-reader'
 require 'json'
 
-
-def equals_roughly(source, target)
-  source > 0.98 * target && source < 1.02 * target
-end
-
 # CODE TAKEN
 class CustomPageLayout < PDF::Reader::PageLayout
   attr_reader :runs
-  # we need to filter duplicate characters which seem to be caused by shadowing
   def group_chars_into_runs(chars)
-    # filter out duplicate chars before going on with regular logic,
-    # seems to happen with shadowed text
     chars.uniq! {|val| {x: val.x, y: val.y, text: val.text}}
     super
   end
 end
 
-
 class PageTextReceiverKeepSpaces < PDF::Reader::PageTextReceiver
-  # We must expose the characters and mediabox attributes to instantiate PageLayout
   attr_reader :characters, :mediabox
-
   private
   def internal_show_text(string)
     if @state.current_font.nil?
@@ -30,21 +19,12 @@ class PageTextReceiverKeepSpaces < PDF::Reader::PageTextReceiver
     end
     glyphs = @state.current_font.unpack(string)
     glyphs.each_with_index do |glyph_code, index|
-      # paint the current glyph
       newx, newy = @state.trm_transform(0,0)
       utf8_chars = @state.current_font.to_utf8(glyph_code)
- 
-      # apply to glyph displacment for the current glyph so the next
-      # glyph will appear in the correct position
       glyph_width = @state.current_font.glyph_width(glyph_code) / 1000.0
       th = 1
       scaled_glyph_width = glyph_width * @state.font_size * th
- 
-      # modification to the original pdf-reader code which otherwise accidentally removes spaces in some cases
-      # unless utf8_chars == SPACE
       @characters << PDF::Reader::TextRun.new(newx, newy, scaled_glyph_width, @state.font_size, utf8_chars)
-      # end
- 
       @state.process_glyph_displacement(glyph_width, 0, utf8_chars == SPACE)
     end
   end
@@ -77,6 +57,10 @@ class PDFTextProcessor
     end
     allruns
   end
+end
+
+def equals_roughly(source, target)
+  source > 0.98 * target && source < 1.02 * target
 end
 
 class RunProcessor
@@ -261,7 +245,6 @@ class RunProcessor
     rescue StopIteration
       content << current_object
     end
-
     return {name: chapter_name, content: content}
   end
 
@@ -276,8 +259,8 @@ if File.exists?("#{ARGV[0]}")
   runs = PDFTextProcessor.process(file)
   processor = RunProcessor.new(runs)
   puts processor.get_json
-  return 0
+  exit 0
 else
   puts "Cannot open file '#{ARGV[0]}' (or no file given)"
-  return 1
+  exit 1
 end
