@@ -121,7 +121,8 @@ app.post('/upload', function(req, res){
                 console.log("Cannot create directory");
             }
             else{
-                fs.rename(file.path, path.join(form.uploadDir, file.name), function(){
+                fs.rename(file.path, path.join(form.uploadDir, file.name), function(err){
+                    console.log("Error on fs.rename: " + err)
                     newFile.setID(uploadCount);
                     newFile.setName(file.name);
                     newFile.genHTML(function(err){

@@ -64,7 +64,7 @@ function FileHandler() {
         else{
             console.log('Parsing pdf');
             var id = this.id.toString();
-            exec('ruby ./dummy.rb', function(error, stdout, stderr){
+            exec('ruby ./parser.rb' + path.join(__dirname, '/o', this.id.toString(), this.getName()), function(error, stdout, stderr){
                 console.log('error: ' + error);
                 console.log('stderr: ' + stderr);
                 var stream = fs.createWriteStream(path.join(__dirname, '/o', id , 'parsed.json'));
