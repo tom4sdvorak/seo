@@ -6,18 +6,6 @@ def equals_roughly(source, target)
   source > 0.98 * target && source < 1.02 * target
 end
 
-
-def heal_stringCZ (string)
-    string.gsub!('Æ', 'á');
-    string.gsub!('Ø', 'é');
-    string.gsub!('•', 'ů');
-    string.gsub!('”', 'ž');
-    string.gsub!('†', 'š');
-    string.gsub!('œ', 'ú');
-    string
-end
-
-
 # CODE TAKEN
 class CustomPageLayout < PDF::Reader::PageLayout
   attr_reader :runs
