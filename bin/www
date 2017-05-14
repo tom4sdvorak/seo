@@ -10,7 +10,6 @@ var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 var server = http.createServer(app);
-var uploadCount = 0;
 
 server.listen(port);
 server.on('error', onError);

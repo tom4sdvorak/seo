@@ -27,7 +27,7 @@ $(document).ready(function(){
 			processData: false,
 			contentType: false,
 			success: function(data){
-				console.log(data);
+				//console.log(data);
                 $(location).attr('href',"/o/" + data.id + "/");
 			},
 			xhr: function() {

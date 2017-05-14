@@ -8,7 +8,7 @@ function FileHandler() {
 
     this.setID = function(id){
         this.id = id;
-        console.log("Setting id: " + id);
+        //console.log("Setting id: " + id);
     };
 
     this.getID = function(){
@@ -17,7 +17,7 @@ function FileHandler() {
 
     this.setName = function(name){
         this.name = name;
-        console.log("Setting name: " + name);
+        //console.log("Setting name: " + name);
     };
 
     this.getName = function(){
@@ -34,14 +34,14 @@ function FileHandler() {
                 callback(0);
             }
             else{
-                console.log("Generating HTML");
+                //console.log("Generating HTML");
                 this.parsedJSON = JSON.parse(fs.readFileSync(path.join(__dirname, '/o', id, "parsed.json"), 'utf8'));
                 var name = this.parsedJSON.paper_name;
                 var done = false;
                 var streamHTML = fs.createWriteStream(path.join(__dirname, '/o', id, name.replace(/ /g, '-') + ".html"));
                 this.writeHTML(streamHTML);
                 streamHTML.on('finish', function(){
-                    console.log('Completed writing html');
+                    //console.log('Completed writing html');
                     if(done){
                         callback(1);
                     }
@@ -53,7 +53,7 @@ function FileHandler() {
                 var streamCSS = fs.createWriteStream(path.join(__dirname, '/o', id, "custom.css"));
                 this.writeCSS(streamCSS);
                 streamCSS.on('finish', function(){
-                    console.log('Completed writing css');
+                    //console.log('Completed writing css');
                     if(done){
                         callback(1);
                     }
@@ -72,7 +72,7 @@ function FileHandler() {
             callback(0);
         }
         else{
-            console.log('Parsing pdf');
+            //console.log('Parsing pdf');
             var id = this.id.toString();
             exec('ruby ./parser.rb ' + path.join(__dirname, '/o', this.id.toString(), this.getName()),{maxBuffer: 1000*1024} ,function(error, stdout, stderr){
                 if(error !== null){
@@ -85,7 +85,7 @@ function FileHandler() {
                     stream.write(stdout);
                     stream.end();
                     stream.on('finish', function(){
-                        console.log('Completed parsing json');
+                        //console.log('Completed parsing json');
                         callback(1);
                     });
                 }

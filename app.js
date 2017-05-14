@@ -15,7 +15,7 @@ function getNextID(){
         }
     }
     count++;
-    console.log("New count is " + count);
+    //console.log("New count is " + count);
     return count;
 }
 
@@ -61,11 +61,11 @@ app.get('/o/:id/', function(req, res){
         }
     }
     if(filename === ""){
-        console.log("Sending back to index");
+        //console.log("Sending back to index");
         res.redirect('/');
     }
     else{
-        console.log("Sending to " + path.join(__dirname, 'o/', id,files[i]));
+        //console.log("Sending to " + path.join(__dirname, 'o/', id,files[i]));
         //res.sendFile(path.join(__dirname, 'o/24/', filename));
         res.sendFile(filename, {root: path.join(__dirname, 'o/', id)});
     }
@@ -80,11 +80,11 @@ app.get('/o/:id/download', function(req, res) {
 
     var id = req.params.id;
     if (fs.existsSync(path.join(__dirname, '/download', 'download' + id + '.zip'))) {
-        console.log("Download already created, sending...");
+        //console.log("Download already created, sending...");
         res.download(path.join(__dirname, '/download', 'download' + id + '.zip'));
     }
     else{
-        console.log("Setting up download");
+        //console.log("Setting up download");
 
         var files = fs.readdirSync(path.join(__dirname, '/o', id));
         var regex = /.html\b/i;
@@ -105,8 +105,8 @@ app.get('/o/:id/download', function(req, res) {
             });
 
             output.on('close', function() {
-                console.log(archive.pointer() + ' BYTES TOTAL');
-                console.log('DONE.');
+                //console.log(archive.pointer() + ' BYTES TOTAL');
+                //console.log('DONE.');
                 res.download(path.join(__dirname, '/download', 'download' + id + '.zip'));
             });
 
@@ -127,7 +127,6 @@ app.get('/o/:id/download', function(req, res) {
  * On upload, receive file and save it to new folder
  */
 app.post('/upload', function(req, res){
-
     var form = new formidable.IncomingForm();
     var newFile = new FileHandler();
     // Once file is received, try to create new directory and save it there
@@ -140,7 +139,7 @@ app.post('/upload', function(req, res){
             else{
                 fs.rename(file.path, path.join(form.uploadDir, file.name), function(err){
                     if(err){
-                        console.log("Error on fs.rename: " + err);
+                        console.log("Cannot move file " + err);
                     }
                     newFile.setID(uploadCount);
                     newFile.setName(file.name);
@@ -151,7 +150,7 @@ app.post('/upload', function(req, res){
                             uploadCount++;
                         }
                         else{
-                            console.log("FINISHED");
+                            //console.log("FINISHED");
                             res.json({success : "File Uploaded", id : newFile.id});
                             uploadCount++;
                         }
