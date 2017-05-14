@@ -1,5 +1,21 @@
- require 'pdf-reader'
- require 'json'
+require 'pdf-reader'
+require 'json'
+
+
+def equals_roughly(source, target)
+  source > 0.98 * target && source < 1.02 * target
+end
+
+
+def heal_stringCZ (string)
+    string.gsub!('Æ', 'á');
+    string.gsub!('Ø', 'é');
+    string.gsub!('•', 'ů');
+    string.gsub!('”', 'ž');
+    string.gsub!('†', 'š');
+    string.gsub!('œ', 'ú');
+    string
+end
 
 
 # CODE TAKEN
@@ -48,58 +64,75 @@ end
 
 #END OF CODE TAKEN
 
- 
-
  #CODE TAKEN AND CUSTOMIZED
 class PDFTextProcessor
-  MAX_KERNING_DISTANCE = 10 # experimental value
- 
-  # pages may specify which pages to actually parse (zero based)
-  #   [0, 3] will process only the first and fourth page if present
+  
   def self.process(pdf_io, pages = nil)
 
     #goes to the beginning, creates a new reader, fails if file empty
     pdf_io.rewind
     reader = PDF::Reader.new(pdf_io) 
-    fail 'Could not find any pages in the given document' if reader.pages.empty?
+    if reader.pages.empty? then fail 'Could not find any pages in the given document' end
 
     text_receiver = PageTextReceiverKeepSpaces.new
-    requested_pages = pages ? reader.pages.values_at(*pages) : reader.pages
+    
     allruns = []
-    requested_pages.each do |page|
+    reader.pages.each do |page|
       unless page.nil?
         page.walk(text_receiver)
         runs = CustomPageLayout.new(text_receiver.characters, text_receiver.mediabox).runs
         # sort text runs from top left to bottom right
         # read as: if both runs are on the same line first take the leftmost, else the uppermost - (0,0) is bottom left
         runs.sort! {|r1, r2| r2.y == r1.y ? r1.x <=> r2.x : r2.y <=> r1.y}
-        allruns += runs
-      
+        allruns += runs 
       end
     end
     allruns
   end
-
-
 end
 
+class RunProcessor
 
-def equals_roughly(source, target)
-  source > 0.97 * target && source < 1.03 * target
-end
+  def initialize(runs)
+    @enum = runs.to_enum
+    @root = {}
+    @root[:chapters] = []
+    @root[:background_color] = "inherit"
+    @root[:font_color] = "inherit"
+
+    @previous = nil
+    @current = @enum.next
+  end
 
 
-def heal_stringCZ (string)
-	string.gsub!('Æ', 'á');
-	string.gsub!('Ø', 'é');
-	string.gsub!('•', 'ů');
-	string.gsub!('”', 'ž');
-	string.gsub!('†', 'š');
-	string.gsub!('œ', 'ú');
-	string
-end
+  def advance
+    @previous = @current
+    @current = @enum.next
+  end 
 
-def get_run_type(run)
+  def seek(type)
+    while get_run_type(@current) != type do
+      advance
+    end
+  end
+
+  def get_json
+    thesis_name = get_thesis_name
+    author_name = get_author_name
+    #puts "Thesis name: " << thesis_name
+    #puts "Author name: " << author_name
+    @root[:paper_name] = thesis_name
+    @root[:author] = author_name
+
+    hack_skip_to_beginning        # REPLACE WITH LOAD META
+
+    hash = parse_chapter
+    @root[:chapters] = [hash]
+
+    return @root.to_json
+  end
+
+  def get_run_type(run)
   run_type = case run.font_size
     when 35
       :chapter_number
@@ -122,67 +155,137 @@ def get_run_type(run)
     else
       :unknown
     end
-end
-
-def get_thesis_name(enum)
-  thesis_name = String.new
-
-  while get_run_type(enum.peek) != :thesis_name do
-    puts "waiting for thesis name"
-    enum.next
   end
 
-  thesis_name << enum.next.text
+  def get_thesis_name
+    thesis_name = String.new
 
-  while get_run_type(enum.peek) == :thesis_name do
-    thesis_name << " " << enum.next.text
-  end
-return thesis_name
-end
+    seek :thesis_name
 
-def get_author_name(enum)
-  author_name = String.new
-  while get_run_type(enum.peek) == :subchapter_lvl1 do
-    author_name << enum.next.text
-  end
-  return author_name
-end
+    thesis_name << @current.text
+    advance
 
-
-def process_runs(runs)
-  enum = runs.to_enum
-  thesis_name = get_thesis_name(enum)
-  author_name = get_author_name(enum)
-  puts "Thesis name: " << thesis_name
-  puts "Author name: " << author_name
-end
-
-def parse_chapter(enum)
-  chapter_name = String.new
-
-  while get_run_type(enum.peek) == :chapter_name do
-    chapter_name << enum.next.text
+    while get_run_type(@current) == :thesis_name do
+      thesis_name << " " << @current.text
+      advance
+    end
+    return thesis_name
   end
 
-  while true do #------------- MAIN LOADING LOOP
-    run = enum.next
+  def get_author_name
+    author_name = String.new
+    while get_run_type(@current) == :subchapter_lvl1 do
+      author_name << @current.text
+      advance
+    end
+    return author_name
+  end
 
-    puts run
+  def get_chapter_name
+    seek :chapter_name          # skip number if present
+
+    chapter_name = String.new
+    while get_run_type(@current) == :chapter_name do          # get chapter name
+      chapter_name << @current.text
+      advance
+    end
+  end
+
+  def hack_skip_to_beginning
+    seek :chapter_number
+    #puts "Skipped to: #{@current.text}"
+  end
+
+  def is_joinable
+    if !@previous then return false end
+    @current.font_size == @previous.font_size && (@current.y - @previous.y).abs < 13.65
+  end
+
+  def parse_chapter
+    begin
+    chapter_name = get_chapter_name
+    rescue StopIteration
+      return nil
+    end
+
+    #puts "Chapter name: #{chapter_name}"
+    content = []
+    current_object = nil
+
+    begin
+      while true do #------------- MAIN LOADING LOOP
+
+        if equals_roughly(@current.y, 94.69) || equals_roughly(@current.y, 739.48)
+          #puts "header/footer, ignored: #{@current.text}"
+          advance
+          next
+        end
 
 
+        if is_joinable
+          #puts "joined: #{@current.text}"
+          current_object[:text] << " " << @current.text
+          advance
+          next
+        end
+
+      
+
+        if get_run_type(@current) == :chapter_name
+          #puts "---- END OF CHAPTER ----"
+          content << current_object
+          break
+        end
+
+
+        if current_object
+          content << current_object
+          current_object = nil
+        end
+
+        #create new hash
+        current_object = {}
+
+        if get_run_type(@current) == :text
+          current_object[:type] = "text/normal"
+          current_object[:text] = @current.text
+        elsif get_run_type(@current) == :subchapter_lvl1
+          current_object[:type] = "text/large"
+          current_object[:text] = @current.text
+        elsif get_run_type(@current) == :subchapter_lvl2
+          current_object[:type] == "text/plus"
+          current_object[:text] = @current.text
+        else
+          current_object[:type] == "unknown"
+          current_object[:text] = @current.text
+        end
+
+        #puts "created object of type #{current_object[:type]}"
+        #puts "#{current_object[:text]}"
+        advance
+      end
+    rescue StopIteration
+      content << current_object
+      puts "rescued iteration at large loop"
+    end
+
+
+    return {name: chapter_name, content: content}
   end
 
 
 end
 
 
-if File.exists?('input/cvachond_2014bach.pdf')#ARGV[0])
-  file = File.open('input/cvachond_2014bach.pdf')#ARGV[0])
+
+#------- MAIN CODE
+if File.exists?("#{ARGV[0]}")
+  file = File.open("#{ARGV[0]}")
   runs = PDFTextProcessor.process(file)
-  process_runs(runs)
-
+  processor = RunProcessor.new(runs)
+  puts processor.get_json
+  return 0
 else
   puts "Cannot open file '#{ARGV[0]}' (or no file given)"
   return 1
 end
-
