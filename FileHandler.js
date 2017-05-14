@@ -132,7 +132,6 @@ function FileHandler() {
                         break;
                     case "text/normal":
                         //Check if item from list
-                        console.log("Searching for bullet: " + this.parsedJSON.chapters[chapter].content[content].text.match(bulletRegex));
                         if(this.parsedJSON.chapters[chapter].content[content].text.match(bulletRegex) !== null){
                             if(doingList !== "bullet"){
                                 stream.write('<ul>');
