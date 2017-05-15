@@ -1,5 +1,8 @@
 require 'pdf-reader'
 require 'json'
+require 'pathname'
+
+require_relative 'extractor'
 
 # CODE TAKEN
 class CustomLayout < PDF::Reader::PageLayout
@@ -32,10 +35,9 @@ end
 
 #END OF CODE TAKEN
 
- #CODE TAKEN AND CUSTOMIZED
 class PDFTextProcessor
   
-  def self.process(pdf_io, pages = nil)
+  def self.process(pdf_io, image_output)
 
     #goes to the beginning, creates a new reader, fails if file empty
     pdf_io.rewind
@@ -44,14 +46,19 @@ class PDFTextProcessor
 
 
     text_receiver = CustomReceiver.new
-    
+    extractor = ExtractImages::Extractor.new(image_output)
+
     allruns = []
     reader.pages.each do |page|
       unless page.nil?
         page.walk(text_receiver)
         runs = CustomLayout.new(text_receiver.characters, text_receiver.mediabox).runs
         runs.sort! {|r1, r2| r2.y == r1.y ? r1.x <=> r2.x : r2.y <=> r1.y}
-        allruns += runs 
+        allruns += runs
+
+        images = extractor.page(page)
+        
+        allruns += images
       end
     end
     allruns
@@ -80,8 +87,8 @@ class RunProcessor
     @enum = runs.to_enum
     @root = {}
     @root[:chapters] = []
-    @root[:background_color] = "inherit"
-    @root[:font_color] = "inherit"
+    #@root[:background_color] = "inherit"
+    #@root[:font_color] = "inherit"
 
     @previous = nil
     @current = @enum.next
@@ -111,7 +118,7 @@ class RunProcessor
     @root[:paper_name] = thesis_name
     @root[:author] = author_name
 
-    hack_skip_to_beginning        # REPLACE WITH LOAD META
+    hack_skip_to_beginning
 
     while true do 
       chapt = parse_chapter
@@ -123,6 +130,9 @@ class RunProcessor
   end
 
   def get_run_type(run)
+
+    if !run.is_a?(PDF::Reader::TextRun) then return :unknown end
+
   run_type = case run.font_size
     when 35
       :chapter_number
@@ -174,7 +184,8 @@ class RunProcessor
   def get_chapter_name
     seek :chapter_name          # skip number if present
 
-    chapter_name = String.new
+    chapter_name = heal_stringCZ( @current.text )
+    advance
     while get_run_type(@current) == :chapter_name do          # get chapter name
       chapter_name << " " << heal_stringCZ( @current.text )
       advance
@@ -188,12 +199,24 @@ class RunProcessor
   end
 
   def is_joinable
-    if !@previous
+    if !@previous || !@previous.is_a?(PDF::Reader::TextRun)
       return false
     end
 
     #evaluates true if the same font && (on same/successive lines || on different pages)
-    @current.font_size == @previous.font_size #&& ( (@current.y - @previous.y).abs < 13.65 ||  @previous.y - @current.y < -500 )
+    @current.font_size == @previous.font_size && ( (@current.y - @previous.y).abs < 13.8 ) #||  @previous.y - @current.y < -500 )
+  end
+
+
+  def save_content_or_label (content, labels, current_object)
+    return if !current_object
+    text = current_object[:text]
+    if text.start_with?("Obr.", "Obrázek")
+      labels << current_object[:text]
+      #puts "This is a label: #{current_object[:text]}"
+    else
+      content << current_object
+    end
   end
 
   def parse_chapter
@@ -206,10 +229,27 @@ class RunProcessor
 
     
     content = []
+    images = []
+    labels = []
     current_object = nil
 
     begin
       while true do #------------- MAIN LOADING LOOP
+
+
+        if @current.is_a? String
+          if current_object
+            #content << current_object
+            save_content_or_label(content, labels, current_object)
+            current_object = nil
+          end
+
+          images << @current
+          #puts "parsing found image #{@current} in chapter #{chapter_name}"
+          advance
+          next
+        end
+
 
         if equals_roughly(@current.y, 94.69) || equals_roughly(@current.y, 739.48)
           #puts "header/footer, ignored: #{@current.text}"
@@ -239,7 +279,8 @@ class RunProcessor
         end
 
         if get_run_type(@current) == :chapter_name
-          content << current_object unless !current_object
+          #content << current_object unless !current_object
+          save_content_or_label(content, labels, current_object) unless !current_object
 
           if content[-1] && content[-1][:type] == "text/large" #&& content[-2] && content[-2][:type] == "text/large"
             content.pop
@@ -251,7 +292,8 @@ class RunProcessor
 
 
         if current_object
-          content << current_object
+          #content << current_object
+          save_content_or_label(content, labels, current_object)
           current_object = nil
         end
 
@@ -276,9 +318,10 @@ class RunProcessor
         advance
       end
     rescue StopIteration
-      content << current_object 
+      #content << current_object
+      save_content_or_label(content, labels, current_object)
     end
-    return {name: chapter_name, content: content}
+    return {name: chapter_name, content: content, images: images, labels: labels}
   end
 
 
@@ -287,13 +330,19 @@ end
 
 
 #------- MAIN CODE
-if File.exists?("#{ARGV[0]}")
-  file = File.open("#{ARGV[0]}", "rb")
-  runs = PDFTextProcessor.process(file)
-  processor = RunProcessor.new(runs)
-  puts processor.get_json
-  exit 0
-else
+if !File.exists?("#{ARGV[0]}") || !File.file?("#{ARGV[0]}")
   puts "Cannot open file '#{ARGV[0]}' (or no file given)"
   exit 1
 end
+
+if !File.exists?("#{ARGV[1]}") || !File.directory?("#{ARGV[1]}")
+  puts "Second argument is not a directory."
+  exit 1
+end
+
+
+file = File.open("#{ARGV[0]}", "rb")
+runs = PDFTextProcessor.process(file, ARGV[1])
+processor = RunProcessor.new(runs)
+puts processor.get_json
+exit 0
