@@ -76,6 +76,11 @@ app.get('/o/:id/custom.css', function(req, res) {
     res.sendFile("custom.css", {root: path.join(__dirname, 'o/', id)});
 });
 
+app.get('/o/:id/images/:file', function(req, res) {
+    var id = req.params.id;
+    res.sendFile(req.params.file, {root: path.join(__dirname, 'o/', id, "images")});
+});
+
 app.get('/o/:id/download', function(req, res) {
 
     var id = req.params.id;
@@ -115,7 +120,7 @@ app.get('/o/:id/download', function(req, res) {
             });
 
             archive.pipe(output);
-            //archive.directory(path.join(__dirname, 'o/', id), '');
+            archive.directory(path.join(__dirname, 'o/', id, "images"), 'images');
             archive.file(path.join(__dirname, 'o/', id, filename), { name: filename });
             archive.file(path.join(__dirname, 'o/', id, "custom.css"), { name: "custom.css" });
             archive.finalize();
@@ -137,6 +142,7 @@ app.post('/upload', function(req, res){
                 console.log("Cannot create directory");
             }
             else{
+                fs.mkdir(path.join(__dirname, '/o', uploadCount.toString(), 'images'));
                 fs.rename(file.path, path.join(form.uploadDir, file.name), function(err){
                     if(err){
                         console.log("Cannot move file " + err);

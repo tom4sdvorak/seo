@@ -74,7 +74,7 @@ function FileHandler() {
         else{
             //console.log('Parsing pdf');
             var id = this.id.toString();
-            exec('ruby ./parser.rb ' + path.join(__dirname, '/o', this.id.toString(), this.getName()),{maxBuffer: 1000*1024} ,function(error, stdout, stderr){
+            exec('ruby ./parser.rb ' + path.join(__dirname, '/o', this.id.toString(), this.getName()) + ' ' + path.join(__dirname, '/o', this.id.toString(), "images"),{maxBuffer: 1000*1024} ,function(error, stdout, stderr){
                 if(error !== null){
                     console.log('error: ' + error);
                     console.log('stderr: ' + stderr);
@@ -191,6 +191,34 @@ function FileHandler() {
                         break;
                 }
             }
+            //Loop images and subtitles
+            var regex = /.tif\b/i;
+            if(this.parsedJSON.chapters[chapter].images.length === 0){
+                continue;
+            }
+            else if(this.parsedJSON.chapters[chapter].images.length === this.parsedJSON.chapters[chapter].labels.length){
+                for(var i = 0; i<this.parsedJSON.chapters[chapter].images.length; i++){
+                    if(this.parsedJSON.chapters[chapter].images[i].search(regex) !== -1){
+                        stream.write('<figure class="bad-image"><a href="images/' + this.parsedJSON.chapters[chapter].images[i] + '">Download Image</a><figcaption>' + this.parsedJSON.chapters[chapter].labels[i] + '</figcaption></figure>');
+                    }
+                    else {
+                        stream.write('<figure><img src="images/' + this.parsedJSON.chapters[chapter].images[i] + '" alt="' + this.parsedJSON.chapters[chapter].labels[i] + '"><figcaption>' + this.parsedJSON.chapters[chapter].labels[i] + '</figcaption></figure>');
+                    }
+                }
+            }
+            else{
+                for(var i = 0; i<this.parsedJSON.chapters[chapter].images.length; i++){
+                    if(this.parsedJSON.chapters[chapter].images[i].search(regex) !== -1){
+                        stream.write('<figure class="bad-image"><a href="images/' + this.parsedJSON.chapters[chapter].images[i] + '">Download Image</a></figure>');
+                    }
+                    else{
+                        stream.write('<figure><img src="images/' + this.parsedJSON.chapters[chapter].images[i] + '" alt="' + this.parsedJSON.paper_name + '-' + this.parsedJSON.chapters[chapter].name + '"></figure>');
+                    }
+                }
+                for(var i = 0; i<this.parsedJSON.chapters[chapter].labels.length; i++){
+                    stream.write('<p class="unord-labels">' + this.parsedJSON.chapters[chapter].labels[i] + '</p>');
+                }
+            }
             stream.write('</article>');
         }
         stream.write('</section></div><footer>' + this.parsedJSON.author + '</footer>');
@@ -217,6 +245,7 @@ function FileHandler() {
     this.writeCSS = function(stream){
         stream.write('nav { display:none }');
         stream.write('#sidemenu { display:none }');
+        stream.write('img { max-width:90%; height:auto }');
         stream.end();
     };
 }
