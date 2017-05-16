@@ -207,7 +207,6 @@ class RunProcessor
     @current.font_size == @previous.font_size && ( (@current.y - @previous.y).abs < 13.8 ) #||  @previous.y - @current.y < -500 )
   end
 
-
   def save_content_or_label (content, labels, current_object)
     return if !current_object
     text = current_object[:text]
@@ -222,12 +221,9 @@ class RunProcessor
   def parse_chapter
     begin
     chapter_name = get_chapter_name
-    
     rescue StopIteration
       return nil
     end
-
-    
     content = []
     images = []
     labels = []
@@ -235,8 +231,6 @@ class RunProcessor
 
     begin
       while true do #------------- MAIN LOADING LOOP
-
-
         if @current.is_a? String
           if current_object
             #content << current_object
@@ -250,14 +244,12 @@ class RunProcessor
           next
         end
 
-
         if equals_roughly(@current.y, 94.69) || equals_roughly(@current.y, 739.48)
           #puts "header/footer, ignored: #{@current.text}"
           #advance
           skip
           next
         end
-
 
         if is_joinable
           if !current_object
@@ -289,7 +281,6 @@ class RunProcessor
 
           break
         end
-
 
         if current_object
           #content << current_object
@@ -323,11 +314,7 @@ class RunProcessor
     end
     return {name: chapter_name, content: content, images: images, labels: labels}
   end
-
-
 end
-
-
 
 #------- MAIN CODE
 if !File.exists?("#{ARGV[0]}") || !File.file?("#{ARGV[0]}")
